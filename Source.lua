@@ -19,20 +19,52 @@ local UIConfig = {
     ColorTextDim = Color3.fromRGB(150, 150, 150)
 }
 
+local httpRequest = (syn and syn.request) or (http and http.request) or http_request or (fluxus and fluxus.request) or request
+
 local function FetchAsset(url, fileName)
+    local getAsset = getsynasset or getcustomasset
+    if not getAsset then return "" end
+
     if not isfile(fileName) then
-        local success, result = pcall(function() 
-            return game:HttpGet(url) 
-        end)
-        if success then
-            writefile(fileName, result)
-            repeat task.wait() until isfile(fileName)
+        local bodyData = nil
+        
+        if httpRequest then
+            local response = httpRequest({
+                Url = url,
+                Method = "GET"
+            })
+            if response and response.Success then
+                bodyData = response.Body
+            end
+        else
+            local success, result = pcall(function() 
+                return game:HttpGet(url) 
+            end)
+            if success then
+                bodyData = result
+            end
+        end
+
+        if bodyData then
+            writefile(fileName, bodyData)
+            task.wait(0.1)
         end
     end
-    return (getsynasset or getcustomasset)(fileName)
+
+    if isfile(fileName) then
+        local success, customAsset = pcall(function()
+            return getAsset(fileName)
+        end)
+        if success then
+            return customAsset
+        end
+    end
+
+    return ""
 end
 
 function SKYLINELIB:Init(Config)
+    Config = Config or {}
     local Hub = {}
     
     local Themes = {
@@ -59,8 +91,8 @@ function SKYLINELIB:Init(Config)
         }
     }
 
-    local CurrentThemeName = Config.SelectBackground or "Meguna"
-    local CurrentTheme = Themes[CurrentThemeName] or { Color = Color3.fromRGB(255, 255, 255) }
+    local CurrentThemeName = Config.SelectBackground or "Sukuna"
+    local CurrentTheme = Themes[CurrentThemeName] or Themes["Sukuna"] or { Color = Color3.fromRGB(255, 255, 255) }
     local Accent = CurrentTheme.Color
 
     local function ApplyTextTheme(obj)
@@ -156,13 +188,13 @@ function SKYLINELIB:Init(Config)
     VisualLayer.ScaleType = Enum.ScaleType.Stretch
     VisualLayer.ZIndex = 0
 
-    if Config.SelectBackground and Themes[Config.SelectBackground] and Themes[Config.SelectBackground].ImageUrl then
+    if CurrentTheme and CurrentTheme.ImageUrl then
         task.spawn(function()
-            local themeData = Themes[Config.SelectBackground]
-            local safeFileName = string.gsub(Config.SelectBackground, " ", "_")
-            VisualLayer.Image = FetchAsset(themeData.ImageUrl, safeFileName .. "_bg.png")
-            if themeData.ImageDimensions then
-                VisualLayer.ImageRectSize = themeData.ImageDimensions
+            local safeFileName = string.gsub(CurrentThemeName, "[^%w_]", "_")
+            local localAsset = FetchAsset(CurrentTheme.ImageUrl, safeFileName .. "_bg.jpg")
+            VisualLayer.Image = localAsset
+            if CurrentTheme.ImageDimensions then
+                VisualLayer.ImageRectSize = CurrentTheme.ImageDimensions
             end
         end)
     end
