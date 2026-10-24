@@ -193,13 +193,13 @@ function SKYLINELIB:Init(Config)
     VisualLayer.Name = "BackgroundVisual"
     VisualLayer.Size = UDim2.new(1, 0, 1, 0)
     VisualLayer.BackgroundTransparency = 1
-    VisualLayer.ImageTransparency = Config.BackgroundImageTransparency or 0.6
+    VisualLayer.ImageTransparency = Config.BackgroundImageTransparency or 0
     VisualLayer.ScaleType = Enum.ScaleType.Stretch
     VisualLayer.ZIndex = 0
 
     if CurrentTheme and CurrentTheme.ImageUrl then
         task.spawn(function()
-            local safeFileName = string.gsub(CurrentThemeName, "[^%w_]", "_") .. "_bg.jpg"
+            local safeFileName = string.gsub(CurrentThemeName, "[^%w_]", "_") .. "_bg.png"
             local localAsset = FetchAsset(CurrentTheme.ImageUrl, safeFileName)
             if localAsset ~= "" then
                 VisualLayer.Image = localAsset
