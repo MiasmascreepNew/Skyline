@@ -37,11 +37,7 @@ local function FetchAsset(url, fileName)
         if httpRequest then
             local response = httpRequest({
                 Url = url,
-                Method = "GET",
-                Headers = {
-                    ["User-Agent"] = "Roblox/WinInet",
-                    ["Accept"] = "image/jpeg, image/png, */*"
-                }
+                Method = "GET"
             })
             if response and (response.StatusCode == 200 or response.Success) then
                 bodyData = response.Body
@@ -67,7 +63,7 @@ local function FetchAsset(url, fileName)
         local success, customAsset = pcall(function()
             return getAsset(fileName)
         end)
-        if success then
+        if success and customAsset then
             return customAsset
         end
     end
@@ -173,36 +169,10 @@ function SKYLINELIB:Init(Config)
     local BaseFrame = Instance.new("Frame")
     BaseFrame.Size = Config.Size or UDim2.fromOffset(450, 320)
     BaseFrame.Position = UDim2.new(0.5, -225, 0.5, -160)
-    BaseFrame.BackgroundTransparency = 1
+    BaseFrame.BackgroundColor3 = UIConfig.ColorBackground
     BaseFrame.ClipsDescendants = true
     BaseFrame.Parent = Root
     Instance.new("UICorner", BaseFrame).CornerRadius = UIConfig.CornerRadius
-
-    local BackgroundHolder = Instance.new("Frame", BaseFrame)
-    BackgroundHolder.Size = UDim2.new(1, 0, 1, 0)
-    BackgroundHolder.BackgroundColor3 = UIConfig.ColorBackground
-    BackgroundHolder.BorderSizePixel = 0
-    Instance.new("UICorner", BackgroundHolder).CornerRadius = UIConfig.CornerRadius
-
-    local VisualLayer = Instance.new("ImageLabel", BackgroundHolder)
-    VisualLayer.Name = "BackgroundVisual"
-    VisualLayer.Size = UDim2.new(1, 0, 1, 0)
-    VisualLayer.BackgroundTransparency = 1
-    VisualLayer.ImageTransparency = Config.BackgroundImageTransparency or 0.6
-    VisualLayer.ScaleType = Enum.ScaleType.Slice
-    VisualLayer.SliceCenter = Rect.new(0, 0, 0, 0)
-
-    if CurrentTheme and CurrentTheme.ImageUrl then
-        task.spawn(function()
-            local safeFileName = string.gsub(CurrentThemeName, "[^%w_]", "_") .. "_bg.jpeg"
-            local localAsset = FetchAsset(CurrentTheme.ImageUrl, safeFileName)
-            VisualLayer.Image = localAsset
-            VisualLayer.ScaleType = Enum.ScaleType.Stretch
-            if CurrentTheme.ImageDimensions then
-                VisualLayer.ImageRectSize = CurrentTheme.ImageDimensions
-            end
-        end)
-    end
 
     local TopBar = Instance.new("Frame", BaseFrame)
     TopBar.Size = UDim2.new(1, 0, 0, 35)
@@ -218,6 +188,27 @@ function SKYLINELIB:Init(Config)
     TitleLabel.TextSize = 14
     TitleLabel.TextXAlignment = "Left"
     ApplyTextTheme(TitleLabel)
+
+    local VisualLayer = Instance.new("ImageLabel", BaseFrame)
+    VisualLayer.Name = "BackgroundVisual"
+    VisualLayer.Size = UDim2.new(1, 0, 1, 0)
+    VisualLayer.BackgroundTransparency = 1
+    VisualLayer.ImageTransparency = Config.BackgroundImageTransparency or 0.6
+    VisualLayer.ScaleType = Enum.ScaleType.Stretch
+    VisualLayer.ZIndex = 0
+
+    if CurrentTheme and CurrentTheme.ImageUrl then
+        task.spawn(function()
+            local safeFileName = string.gsub(CurrentThemeName, "[^%w_]", "_") .. "_bg.jpg"
+            local localAsset = FetchAsset(CurrentTheme.ImageUrl, safeFileName)
+            if localAsset ~= "" then
+                VisualLayer.Image = localAsset
+            end
+            if CurrentTheme.ImageDimensions then
+                VisualLayer.ImageRectSize = CurrentTheme.ImageDimensions
+            end
+        end)
+    end
 
     local NavSide = Instance.new("Frame", BaseFrame)
     NavSide.Size = UDim2.new(0, Config.SideBarWidth or 130, 1, -35)
