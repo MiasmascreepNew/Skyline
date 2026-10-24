@@ -1,3 +1,5 @@
+
+-- Example:
 local SKYLINELIB = {}
 
 local TweenService = game:GetService("TweenService")
@@ -22,9 +24,6 @@ local UIConfig = {
 local httpRequest = (syn and syn.request) or (http and http.request) or http_request or (fluxus and fluxus.request) or request
 
 local function FetchAsset(url, fileName)
-    local getAsset = getsynasset or getcustomasset
-    if not getAsset then return "" end
-
     if isfile(fileName) then
         if readfile(fileName):len() < 100 then
             delfile(fileName)
@@ -59,12 +58,20 @@ local function FetchAsset(url, fileName)
         end
     end
 
-    if isfile(fileName) then
-        local success, customAsset = pcall(function()
-            return getAsset(fileName)
+    local assetFunc = getsynasset or getcustomasset or getasset
+    if assetFunc then
+        local success, res = pcall(function()
+            return assetFunc(fileName)
         end)
-        if success and customAsset then
-            return customAsset
+        if success and res then
+            return res
+        end
+
+        local success2, res2 = pcall(function()
+            return assetFunc("workspace/" .. fileName)
+        end)
+        if success2 and res2 then
+            return res2
         end
     end
 
