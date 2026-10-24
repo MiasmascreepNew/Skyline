@@ -25,29 +25,41 @@ local function FetchAsset(url, fileName)
     local getAsset = getsynasset or getcustomasset
     if not getAsset then return "" end
 
+    if isfile(fileName) then
+        if readfile(fileName):len() < 100 then
+            delfile(fileName)
+        end
+    end
+
     if not isfile(fileName) then
         local bodyData = nil
-        
+
         if httpRequest then
             local response = httpRequest({
                 Url = url,
-                Method = "GET"
+                Method = "GET",
+                Headers = {
+                    ["User-Agent"] = "Roblox/WinInet",
+                    ["Accept"] = "image/jpeg, image/png, */*"
+                }
             })
-            if response and response.Success then
+            if response and (response.StatusCode == 200 or response.Success) then
                 bodyData = response.Body
             end
-        else
-            local success, result = pcall(function() 
-                return game:HttpGet(url) 
+        end
+
+        if not bodyData then
+            local success, result = pcall(function()
+                return game:HttpGet(url)
             end)
-            if success then
+            if success and #result > 100 then
                 bodyData = result
             end
         end
 
         if bodyData then
             writefile(fileName, bodyData)
-            task.wait(0.1)
+            task.wait(0.2)
         end
     end
 
@@ -182,6 +194,7 @@ function SKYLINELIB:Init(Config)
     ApplyTextTheme(TitleLabel)
 
     local VisualLayer = Instance.new("ImageLabel", BaseFrame)
+    VisualLayer.Name = "BackgroundVisual"
     VisualLayer.Size = UDim2.new(1, 0, 1, 0)
     VisualLayer.BackgroundTransparency = 1
     VisualLayer.ImageTransparency = Config.BackgroundImageTransparency or 0.6
@@ -190,8 +203,8 @@ function SKYLINELIB:Init(Config)
 
     if CurrentTheme and CurrentTheme.ImageUrl then
         task.spawn(function()
-            local safeFileName = string.gsub(CurrentThemeName, "[^%w_]", "_")
-            local localAsset = FetchAsset(CurrentTheme.ImageUrl, safeFileName .. "_bg.jpg")
+            local safeFileName = string.gsub(CurrentThemeName, "[^%w_]", "_") .. "_bg.jpeg"
+            local localAsset = FetchAsset(CurrentTheme.ImageUrl, safeFileName)
             VisualLayer.Image = localAsset
             if CurrentTheme.ImageDimensions then
                 VisualLayer.ImageRectSize = CurrentTheme.ImageDimensions
